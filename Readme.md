@@ -1,16 +1,23 @@
-# slate-irc
+# slate-irc-sasl
 
-  General purpose IRC client with:
+  SASL Authentication Plugin for slate-irc general purpose IRC client:
+
+  ( slate-irc core: [https://github.com/slate/slate-irc](https://github.com/slate/slate-irc) )
 
    - plugin system
    - simple api
    - arbitrary input stream
    - __DEBUG__ support for easy debugging
 
+   
+
 ## Installation
 
 ```
+// install core 
 $ npm install slate-irc
+// install sasl plugin
+$ npm install slate-irc-sasl
 ```
 
 ## Example
@@ -18,28 +25,56 @@ $ npm install slate-irc
 ```js
 
 var irc = require('slate-irc');
-var net = require('net');
+var sasl = require('slate-irc-sasl');
+var tls = require('tls');
+var fs = require('fs');
 
-var stream = net.connect({
-  port: 6667,
-  host: 'irc.freenode.org'
-});
+// setup options here. 
+var self = {
+  host: "chat.freenode.net",
+  port: "6697",
+  nick: '',
+  user: '',
+  pass: '',
+  key: '', 
+  cert: ''
+};
 
-var client = irc(stream);
+var stream = tls.connect({
+  host: self.host,
+  port: self.port,
+  key: fs.readFileSync(require("path").resolve(__dirname, self.key)),
+  cert: fs.readFileSync(require("path").resolve(__dirname, self.cert))
+}, function() {
+        
+  var client = irc(stream);
+  client.use(sasl());
 
-client.pass('pass');
-client.nick('tobi');
-client.user('tobi', 'Tobi Ferret');
+  client.write("CAP LS");
+  client.nick(self.nick);
+  client.user(self.user, self.user);
+  client.cap_req("sasl");
+  client.authenticate("PLAIN");
+  client.authenticate64(self.user, self.pass);
+  client.cap_end();
+  client.setMaxListeners(0);
 
-client.join('#express');
-client.names('#express', function(err, names){
+  client.join('#express');
+  client.names('#express', function(err, names){
   console.log(names);
-});
+  })     
+})
+
+
 ```
 
-## API
+----
 
-## Events
+
+### Core API
+* [https://github.com/slate/slate-irc](https://github.com/slate/slate-irc)
+
+#### Events
 
   - `data` (msg) parsed IRC message
   - `message` (event) on __PRIVMSG__
@@ -192,41 +227,6 @@ function pong(){
   }
 }
 ```
-
-## Debugging
-
-  Enable debug output:
-
-```
-$ DEBUG=slate-irc node script.js
-  slate-irc message NOTICE :asimov.freenode.net NOTICE * :*** Looking up your hostname... +0ms
-  slate-irc message NOTICE :asimov.freenode.net NOTICE * :*** Checking Ident +119ms
-  slate-irc message NOTICE :asimov.freenode.net NOTICE * :*** Couldn't look up your hostname +1ms
-  ...
-```
-
-  Enable debug output for a specific plugin:
-
-```
-$ DEBUG=slate-irc:names node test.js
-  slate-irc:names add #luna-lang ["tjholowaychuk","ramitos","zehl","yawnt","juliangruber"] +0ms
-  slate-irc:names emit "names" for #luna-lang +3ms
-```
-
-  Enable output of "raw" slate-irc-parser level debug info:
-
-```
-$ DEBUG=slate-irc-parser node test.js
-` slate-irc-parser line `:rothfuss.freenode.net NOTICE * :*** Looking up your hostname...
-  slate-irc-parser message {"prefix":"rothfuss.freenode.net","command":"NOTICE","params":"*","trailing":"*** Looking up your hostname...","string":":rothfuss.freenode.net NOTICE * :*** Looking up your hostname..."} +2ms
-` +450msirc-parser line `:rothfuss.freenode.net NOTICE * :*** Checking Ident
-  slate-irc-parser message {"prefix":"rothfuss.freenode.net","command":"NOTICE","params":"*","trailing":"*** Checking Ident","string":":rothfuss.freenode.net NOTICE * :*** Checking Ident"} +0ms
-```
-
-## Todo
-
-  - examples
-  - tcp connection with reconnection (separate lib) (re-auth on connect)
 
 # License
 
