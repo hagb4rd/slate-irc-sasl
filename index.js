@@ -35,7 +35,6 @@ module.exports = function () {
 
       irc.use(authenticate());
       irc.use(cap());
-      irc.use(disconnect());
       irc.use(rplloggedin());
       irc.use(rplsaslsuccess());  
   
