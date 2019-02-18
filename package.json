@@ -1,6 +1,10 @@
 {
   "name": "slate-irc-sasl",
   "version": "1.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hagb4rd/slate-irc-sasl.git"
+  },
   "description": "Node.js IRC client library plugin for EXTERNAL SASL AUTHENTIFICATION",
   "keywords": [
     "irc",
